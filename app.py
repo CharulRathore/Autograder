@@ -4,12 +4,28 @@ from urllib.parse import quote as url_quote
 import os
 import time
 import textwrap
-# import boto3
+import boto3
+from decimal import Decimal
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
+
+
+def add_score_dynamodb(student_id,best_score):
+    print("")
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1') 
+    table = dynamodb.Table(os.environ.get('dynamo_table'))
+    table.put_item(
+        Item={
+            'email': student_id,
+            'best_score': best_score,
+        }
+    )
+
+
 
 
 @app.route("/")
@@ -100,7 +116,8 @@ def submit():
         try:
             exec(wrapped_code, {}, output)
         except SyntaxError as e:
-            score = 0
+            score = 0.0
+            add_score_dynamodb(student_id, str(score)+'%')
             return jsonify({'message': 'Compilation Error: {}'.format(e), 'score': str(score)+'%'})
 
         if 'my_main' in output and callable(output['my_main']):
@@ -126,9 +143,11 @@ def submit():
                     score+=1
                     result[test] = [str(execution_time)+' MS', '[PASS]']
                 
-                current_score =100*(score/len(test_cases))
+            
+            score = 100*(score/len(test_cases))
+            add_score_dynamodb(student_id, str(score)+'%')
 
-            return jsonify({'message': 'Code compiled successfully!', 'result': result, 'score': str(100*(score/len(test_cases)))+'%'})
+            return jsonify({'message': 'Code compiled successfully!', 'result': result, 'score': str(score)+'%'})
         return jsonify({'message': 'Python code received!', 'content': python_code})
         
     else:
