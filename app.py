@@ -110,7 +110,7 @@ def submit():
 
                 start_time = time.time()
                 temp = output['my_main'](n, kr, kc, pr, pc)
-                execution_time = (time.time() - start_time)*1000
+                execution_time = round((time.time() - start_time)*1000, 4)
                 # print(execution_time)
 
                 if (execution_time > 2000):
