@@ -4,11 +4,35 @@ from urllib.parse import quote as url_quote
 import os
 import time
 import textwrap
+from flask_sqlalchemy import SQLAlchemy
+import logging
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///results.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+logging.basicConfig(level=logging.INFO)
+
+class Result(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.String(120), unique=True, nullable=False)
+    best_score = db.Column(db.Float, nullable=False)
+
+    def __repr__(self):
+        return f'<Result {self.student_id} {self.best_score}>'
+
+@app.route('/debug/db')
+def debug_db_entries():
+    results = Result.query.all()
+    for result in results:
+        logging.info(result)
+    return jsonify({'message': 'Logged all database entries', 'count': len(results)})
 
 
 @app.route("/")
@@ -55,6 +79,10 @@ def submit():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
     
+    student_id = session.get('user_email') 
+    if not student_id:
+        return jsonify({'message': 'Authentication required'})
+
     text_content = request.form.get('code_text')
     file = request.files.get('file')
     score = 0
@@ -89,13 +117,26 @@ def submit():
             "    return result\n"                             # Return statement of the wrapper function
         )
 
-        print(wrapped_code)
+        # print(wrapped_code)
         output = {}
         result = {}
         try:
             exec(wrapped_code, {}, output)
         except SyntaxError as e:
             score = 0
+            result_entry = Result.query.filter_by(student_id=student_id).first()
+            if result_entry:
+                if score > result_entry.best_score:
+                    result_entry.best_score = score 
+                    logging.info(f"Current database entry for {student_id}: {result_entry}")
+                    db.session.commit()
+            else:
+                # Create a new database entry if none exists
+                new_result = Result(student_id=student_id, best_score=score)
+                db.session.add(new_result)
+                logging.info(f"No database entry found for {student_id}. A new one will be created.")
+                db.session.commit()
+                logging.info(f"Updated database entry for {student_id}: {result_entry}")
             return jsonify({'message': 'Compilation Error: {}'.format(e), 'score': str(score)+'%'})
 
         if 'my_main' in output and callable(output['my_main']):
@@ -120,6 +161,23 @@ def submit():
                 else:
                     score+=1
                     result[test] = [str(execution_time)+' MS', '[PASS]']
+                
+                current_score =100*(score/len(test_cases))
+                # Fetch the current best score or create a new record
+
+            result_entry = Result.query.filter_by(student_id=student_id).first()
+            if result_entry:
+                if current_score > result_entry.best_score:
+                    result_entry.best_score = current_score 
+                    logging.info(f"Current database entry for {student_id}: {result_entry}")
+                    db.session.commit()
+            else:
+                # Create a new database entry if none exists
+                new_result = Result(student_id=student_id, best_score=current_score)
+                db.session.add(new_result)
+                logging.info(f"No database entry found for {student_id}. A new one will be created.")
+                db.session.commit()
+                logging.info(f"Updated database entry for {student_id}: {result_entry}")
 
             return jsonify({'message': 'Code compiled successfully!', 'result': result, 'score': str(100*(score/len(test_cases)))+'%'})
         return jsonify({'message': 'Python code received!', 'content': python_code})
@@ -129,4 +187,9 @@ def submit():
     
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)
+
+  
+
