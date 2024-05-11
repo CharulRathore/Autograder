@@ -12,8 +12,8 @@ Session(app)
 
 @app.route("/")
 def welcome():
-    if session['logged_in'] == True:
-        return render_template('index.html')
+    # if session['logged_in'] == True:
+    #     return render_template('index.html')
     return render_template("login.html")
 
 users = {
