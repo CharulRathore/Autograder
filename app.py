@@ -12,6 +12,28 @@ app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
+def check_exist_student_id(student_id):
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1') 
+    table = dynamodb.Table(os.environ.get('dynamo_table'))
+    response = table.get_item(Key={'email': student_id})
+    if 'Item' in response:
+        return True
+    return False
+
+def update_score(student_id,current_score):
+    dynamodb = boto3.resource('dynamodb', region_name='us-east-1') 
+    table = dynamodb.Table(os.environ.get('dynamo_table'))
+    response = table.get_item(Key={'email': student_id})
+    if 'Item' in response:
+        best_score_str = response['Item']['best_score']
+        best_score = float(best_score_str.strip('%')) / 100
+        if current_score > best_score:
+            table.put_item(
+                    Item={
+                        'email': student_id,
+                        'best_score': str(current_score)+'%'
+                    }
+                )
 
 
 def add_score_dynamodb(student_id,best_score):
@@ -52,12 +74,10 @@ def login():
     password = request.form.get('password')
 
     if email in users and users[email] == password:
-        # Authentication successful
         session['logged_in'] = True
         session['user_email'] = email
         return redirect(url_for('index'))
     else:
-        # Authentication failed
         return  render_template("/login.html", message="Failed! Try again.")
     
 @app.route('/index')
@@ -98,16 +118,13 @@ def submit():
         else:
             return jsonify({'message': 'No valid input provided'})
 
-        # Carefully form the function wrapper with correct indentation
-        # Prepare the student's code with uniform indentation
         indented_code = textwrap.indent(python_code.strip(), '    ')
 
-        # Wrap the indented student code inside the `my_main` function
         wrapped_code = (
-            "def my_main(n, kr, kc, pr, pc):\n"  # Start of the function definition
-            f"{indented_code}\n"                # Student's code, indented properly
-            "    result = knight_attack(n, kr, kc, pr, pc)\n"  # Part of the wrapper function
-            "    return result\n"                             # Return statement of the wrapper function
+            "def my_main(n, kr, kc, pr, pc):\n"  
+            f"{indented_code}\n"                
+            "    result = knight_attack(n, kr, kc, pr, pc)\n"  
+            "    return result\n"                             
         )
 
         # print(wrapped_code)
@@ -117,7 +134,10 @@ def submit():
             exec(wrapped_code, {}, output)
         except SyntaxError as e:
             score = 0.0
-            add_score_dynamodb(student_id, str(score)+'%')
+            if check_exist_student_id(student_id):
+                update_score(student_id, score)
+            else:
+                add_score_dynamodb(student_id, str(score)+'%')
             return jsonify({'message': 'Compilation Error: {}'.format(e), 'score': str(score)+'%'})
 
         if 'my_main' in output and callable(output['my_main']):
@@ -145,7 +165,10 @@ def submit():
                 
             
             score = 100*(score/len(test_cases))
-            add_score_dynamodb(student_id, str(score)+'%')
+            if check_exist_student_id(student_id):
+                update_score(student_id, score)
+            else:
+                add_score_dynamodb(student_id, str(score)+'%')
 
             return jsonify({'message': 'Code compiled successfully!', 'result': result, 'score': str(score)+'%'})
         return jsonify({'message': 'Python code received!', 'content': python_code})
