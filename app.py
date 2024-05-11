@@ -17,6 +17,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///results.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
+with app.app_context():
+    print("DB created!")
+    db.create_all()
+
+
 logging.basicConfig(level=logging.INFO)
 
 class Result(db.Model):
@@ -187,8 +192,6 @@ def submit():
     
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
 
   
