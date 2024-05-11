@@ -14,7 +14,7 @@
             padding: 0;
             background-color: #f4f4f4;
         }
-        .container {
+        .container, .problem-container {
             max-width: 600px;
             margin: 50px auto;
             padding: 20px;
@@ -22,8 +22,13 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+        .problem-container {
+            margin-bottom: 20px; /* Added margin for spacing between containers */
+        }
+
         h1 {
             margin-top: 0;
+            text-align:center;
         }
         label {
             display: block;
@@ -65,59 +70,37 @@
         button:hover {
             background-color: #0056b3;
         }
+        img {
+            width: 100%; /* Controls the size of the image */
+            height: auto;
+            max-width: 250px; /* Reduces the maximum width of the image */
+            display: block; /* Ensures the image is block level */
+            margin: 10px auto; /* Centers the image and adds some margin */
+        }
+
     </style>
 </head>
-<!-- <body>
-    <div class="container">
-        <h1>Submit Your Solution</h1>
-        <form id="submit-form">
-            <label for="code_text">Enter your code:</label>
-            <textarea id="code_text" name="code_text" rows="10" cols="30"></textarea><br><br>
-            <label for="file">Or upload a .py file:</label>
-            <input type="file" id="file" name="file" accept=".py"><br><br>
-            <button type="button" id="submit-btn">Submit</button>
-        </form>
-        
-        <div id="response-container"></div> 
-        
-        <div class="button-container">
-            <a href="/logout"><button type="button" id="logout-btn">Logout</button></a>
-        </div>
-    </div>
-    <script>
-        var editor = CodeMirror.fromTextArea(document.getElementById('code_text'), {
-            lineNumbers: true,
-            mode: 'python',
-            theme: 'default'
-        });
-
-        document.getElementById('submit-btn').addEventListener('click', function() {
-            var formData = new FormData();
-            formData.append('code_text', editor.getValue());
-            formData.append('file', document.getElementById('file').files[0]);
-
-            fetch('/submit', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('response-container').innerText = JSON.stringify(data, null, 2);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-            });
-        });
-
-        document.getElementById('logout-btn').addEventListener('click', function(event) {
-            event.preventDefault();
-            window.location.href = '/logout';
-        });
-    </script>
-</body> -->
 
 <body>
-    <div class="container">
+    <div class="problem-container">
+        <h1>Knight Attack Problem</h1>
+        <p>A knight and a pawn are on a chess board. Can you figure out the minimum number of moves required for the knight to travel to the same position of the pawn? On a single move, the knight can move in an "L" shape; two spaces in any direction, then one space in a perpendicular direction. This means that on a single move, a knight has eight possible positions it can move to. (refer below picture)</p>
+        <img src="https://structy-static.s3.amazonaws.com/knight-movement.png" alt="Knight Movement Diagram">
+        <p>Write a function <code>knight_attack()</code> that takes in 5 arguments:
+        <ul>
+            <li><code>n</code>: the length of the chess board</li>
+            <li><code>kr</code>: the starting row of the knight</li>
+            <li><code>kc</code>: the starting column of the knight</li>
+            <li><code>pr</code>: the row of the pawn</li>
+            <li><code>pc</code>: the column of the pawn</li>
+        </ul>
+        The function should return a number representing the minimum number of moves required for the knight to land on top of the pawn. The knight cannot move out of bounds of the board. You can assume that rows and columns are 0-indexed. This means that if n = 8, there are 8 rows and 8 columns numbered 0 to 7. If it is not possible for the knight to attack the pawn, then return 'None'.
+        </p>
+        <p>You can fill out the function in given python IDE or submit '.py' file that contains this function with imports.</p>
+    </div>
+
+
+    <div class="container">     
         <h1>Submit Your Solution</h1>
         <form id="submit-form" action="/submit" method="post" enctype="multipart/form-data">
             <label for="code_text">Enter your code:</label>

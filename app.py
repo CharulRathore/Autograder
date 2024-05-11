@@ -3,6 +3,7 @@ from flask_session import Session
 from urllib.parse import quote as url_quote
 import os
 import time
+import textwrap
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
@@ -18,6 +19,7 @@ def welcome():
 
 users = {
     'charul.rathore@sjsu.edu': 'Charul123',
+    'narayan.balasubramanian@sjsu.edu': 'CS218'
 }
 
 @app.route('/logout')
@@ -64,25 +66,37 @@ def submit():
         'test_04': [[24, 4, 7, 19, 20],10],
         'test_05': [[100, 21, 10, 0, 0],11],
         'test_06': [[3, 0, 0, 1, 2],2], ## Planted wrong answer, correct is 1
-        'test_07': [[3, 0, 0, 1, 1],-1]
+        'test_07': [[3, 0, 0, 1, 1],None]
     }
     if file and file.filename.endswith('.py') or text_content:
 
         if file and file.filename.endswith('.py'):
             python_code = file.read().decode('utf-8')
-        
-        if text_content:
+        elif text_content:
             python_code = text_content
-            # print(python_code)
+        else:
+            return jsonify({'message': 'No valid input provided'})
 
+        # Carefully form the function wrapper with correct indentation
+        # Prepare the student's code with uniform indentation
+        indented_code = textwrap.indent(python_code.strip(), '    ')
+
+        # Wrap the indented student code inside the `my_main` function
+        wrapped_code = (
+            "def my_main(n, kr, kc, pr, pc):\n"  # Start of the function definition
+            f"{indented_code}\n"                # Student's code, indented properly
+            "    result = knight_attack(n, kr, kc, pr, pc)\n"  # Part of the wrapper function
+            "    return result\n"                             # Return statement of the wrapper function
+        )
+
+        print(wrapped_code)
         output = {}
         result = {}
-        # exec(python_code, {}, output)
         try:
-            exec(python_code, {}, output)
+            exec(wrapped_code, {}, output)
         except SyntaxError as e:
             score = 0
-            return jsonify({'message': 'Compliation Error SyntaxError in provided Python code: {}'.format(e), 'score': str(score)+'%'})
+            return jsonify({'message': 'Compilation Error: {}'.format(e), 'score': str(score)+'%'})
 
         if 'my_main' in output and callable(output['my_main']):
             count = 0
@@ -107,7 +121,7 @@ def submit():
                     score+=1
                     result[test] = [str(execution_time)+' MS', '[PASS]']
 
-            return jsonify({'message': 'Python code executed!', 'result': result, 'score': str(100*(score/len(test_cases)))+'%'})
+            return jsonify({'message': 'Code compiled successfully!', 'result': result, 'score': str(100*(score/len(test_cases)))+'%'})
         return jsonify({'message': 'Python code received!', 'content': python_code})
         
     else:
