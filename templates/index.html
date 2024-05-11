@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Solution</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.63.1/mode/python/python.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        textarea,
+        input[type="file"],
+        input[type="submit"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="submit"] {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        button {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<!-- <body>
+    <div class="container">
+        <h1>Submit Your Solution</h1>
+        <form id="submit-form">
+            <label for="code_text">Enter your code:</label>
+            <textarea id="code_text" name="code_text" rows="10" cols="30"></textarea><br><br>
+            <label for="file">Or upload a .py file:</label>
+            <input type="file" id="file" name="file" accept=".py"><br><br>
+            <button type="button" id="submit-btn">Submit</button>
+        </form>
+        
+        <div id="response-container"></div> 
+        
+        <div class="button-container">
+            <a href="/logout"><button type="button" id="logout-btn">Logout</button></a>
+        </div>
+    </div>
+    <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById('code_text'), {
+            lineNumbers: true,
+            mode: 'python',
+            theme: 'default'
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', function() {
+            var formData = new FormData();
+            formData.append('code_text', editor.getValue());
+            formData.append('file', document.getElementById('file').files[0]);
+
+            fetch('/submit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('response-container').innerText = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', function(event) {
+            event.preventDefault();
+            window.location.href = '/logout';
+        });
+    </script>
+</body> -->
+
+<body>
+    <div class="container">
+        <h1>Submit Your Solution</h1>
+        <form id="submit-form" action="/submit" method="post" enctype="multipart/form-data">
+            <label for="code_text">Enter your code:</label>
+            <textarea id="code_text" name="code_text" rows="10" cols="30"></textarea><br><br>
+            <label for="file">Or upload a .py file:</label>
+            <input type="file" id="file" name="file" accept=".py"><br><br>
+            <button type="submit">Submit</button>
+        </form>
+        
+        <div id="response-container">
+            <div id="error-container"></div>
+        </div>
+
+        <div class="button-container">
+            <a href="/logout"><button type="submit" id="logout-btn">Logout</button></a>
+        </div>
+    </div>
+    <script>
+        var editor = CodeMirror.fromTextArea(document.getElementById('code_text'), {
+            lineNumbers: true,
+            mode: 'python',
+            theme: 'default'
+        });
+
+        document.getElementById('submit-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            var formData = new FormData(this);
+
+            try {
+                var response = await fetch('/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to submit code');
+                }
+
+                var responseData = await response.json();
+
+                var responseContainer = document.getElementById('response-container');
+                responseContainer.innerHTML = '';
+
+                var messageElement = document.createElement('p');
+                messageElement.textContent = responseData.message;
+                responseContainer.appendChild(messageElement);
+
+                var resultElement = document.createElement('p');
+                resultElement.textContent = 'Result:';
+                responseContainer.appendChild(resultElement);
+
+                var resultTable = document.createElement('table');
+                var headerRow = document.createElement('tr');
+                var header1 = document.createElement('th');
+                header1.textContent = 'Test Case';
+                var header2 = document.createElement('th');
+                header2.textContent = 'Execution Time';
+                var header3 = document.createElement('th');
+                header3.textContent = 'Status';
+                var header4 = document.createElement('th');
+                header4.textContent = 'Result';
+                headerRow.appendChild(header1);
+                headerRow.appendChild(header2);
+                headerRow.appendChild(header3);
+                headerRow.appendChild(header4);
+                resultTable.appendChild(headerRow);
+
+                for (var testCase in responseData.result) {
+                    var row = document.createElement('tr');
+                    var cell1 = document.createElement('td');
+                    cell1.textContent = testCase;
+                    var cell2 = document.createElement('td');
+                    cell2.textContent = responseData.result[testCase][0];
+                    var cell3 = document.createElement('td');
+                    cell3.textContent = responseData.result[testCase][1];
+                    var cell4 = document.createElement('td');
+                    if (responseData.result[testCase][2]) {
+                        cell4.textContent = responseData.result[testCase][2];
+                    } else {
+                        cell4.textContent = '';
+                    }
+                    row.appendChild(cell1);
+                    row.appendChild(cell2);
+                    row.appendChild(cell3);
+                    row.appendChild(cell4);
+                    resultTable.appendChild(row);
+                    }
+
+                    responseContainer.appendChild(resultTable);
+
+                    var scoreElement = document.createElement('p');
+                    scoreElement.textContent = 'Score: ' + responseData.score;
+                    responseContainer.appendChild(scoreElement);
+
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', (event) => {
+            event.preventDefault();
+            window.location.href = '/logout';
+        });
+    </script>
+</body>
+</html>
