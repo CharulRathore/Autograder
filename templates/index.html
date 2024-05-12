@@ -18,7 +18,7 @@
             max-width: 600px;
             margin: 50px auto;
             padding: 20px;
-            background-color: #b8afaf;
+            background-color: #e0dfdf;
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
@@ -108,9 +108,9 @@
     <div class="container">     
         <h1>Submit Your Solution</h1>
         <form id="submit-form" action="/submit" method="post" enctype="multipart/form-data">
-            <label for="code_text">Enter your code:</label>
+            <label for="code_text"><b>Enter your code:</b></label>
             <textarea id="code_text" name="code_text" rows="10" cols="30"></textarea><br><br>
-            <label for="file">Or upload a .py file:</label>
+            <label for="file"><b>Or upload a .py file:</b></label>
             <input type="file" id="file" name="file" accept=".py"><br><br>
             <button type="submit">Submit</button>
         </form>
