@@ -5,7 +5,6 @@ import os
 import time
 import textwrap
 import boto3
-from decimal import Decimal
 
 app = Flask(__name__)
 app.config["SESSION_PERMANENT"] = False
