@@ -56,3 +56,5 @@ def bfs(n, kr, kc, pr, pc, visited):
             r, c = position
             q.append((r, c, move+1))
     return None
+
+

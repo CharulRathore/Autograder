@@ -129,6 +129,7 @@ def submit():
         # print(wrapped_code)
         output = {}
         result = {}
+        
         try:
             exec(wrapped_code, {}, output)
         except SyntaxError as e:
@@ -150,25 +151,33 @@ def submit():
                 pc = test_cases[test][0][4]
 
                 start_time = time.time()
-                temp = output['my_main'](n, kr, kc, pr, pc)
+                
+                try:
+                    temp = output['my_main'](n, kr, kc, pr, pc)
+                except Exception as e:
+                    score = 0.0
+                    print(f"An exception occurred: {e}")
+                    return jsonify({'message': 'Runtime Exception! ABORTED! Try again', 'score': str(score)+'%'})
+                
                 execution_time = round((time.time() - start_time)*1000, 4)
-                # print(execution_time)
-
+                # print("Temp:", temp)                    
+                
                 if (execution_time > 2000):
-                    result[test] = ['Timeout', '[FAIL]']
+                    score = 0.0
+                    return jsonify({'message': 'TIMEOUT! ABORTED! Try again', 'score': str(score)+'%'})
                 elif (temp != test_cases[test][1]): 
                     result[test] = ['Incorrect! Expected: '+ str(test_cases[test][1]) + ' got ' + str(temp), '[FAIL]']
                 else:
                     score+=1
                     result[test] = [str(execution_time)+' MS', '[PASS]']
                 
-            
             score = 100*(score/len(test_cases))
             if check_exist_student_id(student_id):
                 update_score(student_id, score)
             else:
                 add_score_dynamodb(student_id, str(score)+'%')
 
+            
             return jsonify({'message': 'Code compiled successfully!', 'result': result, 'score': str(score)+'%'})
         return jsonify({'message': 'Python code received!', 'content': python_code})
         
