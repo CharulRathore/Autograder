@@ -34,7 +34,6 @@ def update_score(student_id,current_score):
                     }
                 )
 
-
 def add_score_dynamodb(student_id,best_score):
     print("")
     dynamodb = boto3.resource('dynamodb', region_name='us-east-1') 
@@ -45,9 +44,6 @@ def add_score_dynamodb(student_id,best_score):
             'best_score': best_score,
         }
     )
-
-
-
 
 @app.route("/")
 def welcome():
@@ -84,6 +80,7 @@ def index():
     if not session.get('logged_in'):
         return redirect(url_for('welcome'))
     return render_template('index.html')
+
 
 
 @app.route('/submit', methods=['POST'])
@@ -129,6 +126,7 @@ def submit():
         # print(wrapped_code)
         output = {}
         result = {}
+        timeout_seconds = 2
         
         try:
             exec(wrapped_code, {}, output)
@@ -163,8 +161,8 @@ def submit():
                 # print("Temp:", temp)                    
                 
                 if (execution_time > 2000):
-                    score = 0.0
-                    return jsonify({'message': 'TIMEOUT! ABORTED! Try again', 'score': str(score)+'%'})
+                   score = 0.0
+                   return jsonify({'message': 'TIMEOUT! ABORTED! Try again', 'score': str(score)+'%'})
                 elif (temp != test_cases[test][1]): 
                     result[test] = ['Incorrect! Expected: '+ str(test_cases[test][1]) + ' got ' + str(temp), '[FAIL]']
                 else:
